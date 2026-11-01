@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+
+enum AdmissionStatus {
+  DRAFT
+  SUBMITTED
+  FINALIZED
+  REJECTED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+
+enum ClassroomPostType {
+  ANNOUNCEMENT
+  ASSIGNMENT
+}
+
+model User {
+  id                  String   @id @default(uuid())
+  username            String   @unique
+  email               String   @unique
+  passwordHash        String
+  emailVerified       Boolean  @default(false)
+  mustChangePassword  Boolean  @default(false)
+  role                UserRole @default(STUDENT)
+  teachingSections    CourseSection[] @relation("TeachingSections")
+  createdSections     CourseSection[] @relation("SectionCreator")
+  rooms               Room[]
+  enrollments         Enrollment[]
+  admissions          Admission[]
+  classroomPosts      ClassroomPost[] @relation("ClassroomPostTeacher")
+
+  @@map("users")
+}
+
+model CourseSection {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  course      String
+  yearLevel   Int
+  semester    String
+  createdById String
+  teacherId   String?
+  createdBy   User     @relation("SectionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  teacher     User?    @relation("TeachingSections", fields: [teacherId], references: [id], onDelete: SetNull)
+  subjects    Subject[]
+  admissions  Admission[]
+  createdAt   DateTime @default(now())
+
+  @@index([teacherId])
+  @@map("course_sections")
+}
+
+model Subject {
+  id             String   @id @default(uuid())
+  code           String
+  title          String
+  units          Int
+  dayOfWeek      Int      @default(1)
+  startTime      String   @default("08:00")
+  endTime        String   @default("09:00")
+  sectionId      String
+  section        CourseSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  rooms          Room[]
+  admissions     AdmissionSubject[]
+  classroomPosts ClassroomPost[]
+  createdAt      DateTime @default(now())
+
+  @@unique([sectionId, code])
+  @@map("subjects")
+}
+
+model Room {
+  id        String   @id
+  passcode  String
+  ownerId   String?
+  subjectId String?
+  startsAt  DateTime?
+  endsAt    DateTime?
+  owner     User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  subject   Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+  @@index([subjectId, startsAt, endsAt])
+  @@map("rooms")
+}
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  courseCode String
+  studentId  String
+  student    User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([studentId, courseCode])
+  @@map("enrollments")
+}
+
+model Admission {
+  id            String          @id @default(uuid())
+  studentId     String
+  sectionId     String
+  status        AdmissionStatus @default(DRAFT)
+  paymentStatus PaymentStatus   @default(UNPAID)
+  student       User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  section       CourseSection   @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  subjects      AdmissionSubject[]
+
+  @@map("admissions")
+}
+
+model AdmissionSubject {
+  admissionId String
+  subjectId   String
+  joinCode    String  @unique
+  schedule    String
+  admission   Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
+  subject     Subject   @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+
+  @@id([admissionId, subjectId])
+  @@map("admission_subjects")
+}
+
+model ClassroomPost {
+  id        String            @id @default(uuid())
+  type      ClassroomPostType
+  title     String
+  content   String
+  dueAt     DateTime?
+  teacherId String
+  subjectId String
+  teacher   User              @relation("ClassroomPostTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  subject   Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  attachments ClassroomPostAttachment[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([subjectId, createdAt])
+  @@index([teacherId, createdAt])
+  @@map("classroom_posts")
+}
+
+model ClassroomPostAttachment {
+  id           String       @id @default(uuid())
+  postId       String
+  originalName String
+  storedName   String       @unique
+  mimeType     String
+  size         Int
+  post         ClassroomPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+
+  @@index([postId])
+  @@map("classroom_post_attachments")
+}

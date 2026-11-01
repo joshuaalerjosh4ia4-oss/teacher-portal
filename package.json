@@ -1,0 +1,31 @@
+{
+  "name": "myclasses-teacher-portal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n api,vite \"npm:dev:api\" \"npm:dev:vite\"",
+    "dev:api": "npm --prefix server run dev",
+    "dev:vite": "vite --host 0.0.0.0",
+    "build": "tsc -b && npm --prefix server run build && vite build",
+    "start": "npm --prefix server start",
+    "typecheck": "tsc -b --pretty false && npm --prefix server run typecheck",
+    "prisma:generate": "npm --prefix server run prisma:generate",
+    "prisma:deploy": "npm --prefix server run prisma:deploy"
+  },
+  "dependencies": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.0",
+    "@types/react-dom": "~19.2.0",
+    "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^10.0.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.12"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
