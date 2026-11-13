@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 enum UserRole {
@@ -31,72 +31,72 @@ enum ClassroomPostType {
 }
 
 model User {
-  id                  String   @id @default(uuid())
-  username            String   @unique
-  email               String   @unique
-  passwordHash        String
-  emailVerified       Boolean  @default(false)
-  mustChangePassword  Boolean  @default(false)
-  role                UserRole @default(STUDENT)
-  teachingSections    CourseSection[] @relation("TeachingSections")
-  createdSections     CourseSection[] @relation("SectionCreator")
-  rooms               Room[]
-  enrollments         Enrollment[]
-  admissions          Admission[]
-  classroomPosts      ClassroomPost[] @relation("ClassroomPostTeacher")
-  quizzes             Quiz[]
+  id                 String          @id @default(uuid())
+  username           String          @unique
+  email              String          @unique
+  passwordHash       String
+  emailVerified      Boolean         @default(false)
+  mustChangePassword Boolean         @default(false)
+  role               UserRole        @default(STUDENT)
+  teachingSections   CourseSection[] @relation("TeachingSections")
+  createdSections    CourseSection[] @relation("SectionCreator")
+  rooms              Room[]
+  enrollments        Enrollment[]
+  admissions         Admission[]
+  classroomPosts     ClassroomPost[] @relation("ClassroomPostTeacher")
+  quizzes            Quiz[]
 
   @@map("users")
 }
 
 model CourseSection {
-  id          String   @id @default(uuid())
-  code        String   @unique
+  id          String      @id @default(uuid())
+  code        String      @unique
   course      String
   yearLevel   Int
   semester    String
   createdById String
   teacherId   String?
-  createdBy   User     @relation("SectionCreator", fields: [createdById], references: [id], onDelete: Restrict)
-  teacher     User?    @relation("TeachingSections", fields: [teacherId], references: [id], onDelete: SetNull)
+  createdBy   User        @relation("SectionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  teacher     User?       @relation("TeachingSections", fields: [teacherId], references: [id], onDelete: SetNull)
   subjects    Subject[]
   admissions  Admission[]
-  createdAt   DateTime @default(now())
+  createdAt   DateTime    @default(now())
 
   @@index([teacherId])
   @@map("course_sections")
 }
 
 model Subject {
-  id             String   @id @default(uuid())
+  id             String             @id @default(uuid())
   code           String
   title          String
   units          Int
-  dayOfWeek      Int      @default(1)
-  startTime      String   @default("08:00")
-  endTime        String   @default("09:00")
+  dayOfWeek      Int                @default(1)
+  startTime      String             @default("08:00")
+  endTime        String             @default("09:00")
   sectionId      String
-  section        CourseSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  section        CourseSection      @relation(fields: [sectionId], references: [id], onDelete: Cascade)
   rooms          Room[]
   admissions     AdmissionSubject[]
   classroomPosts ClassroomPost[]
   quizzes        Quiz[]
-  createdAt      DateTime @default(now())
+  createdAt      DateTime           @default(now())
 
   @@unique([sectionId, code])
   @@map("subjects")
 }
 
 model Room {
-  id        String   @id
+  id        String    @id
   passcode  String
   ownerId   String?
   subjectId String?
   startsAt  DateTime?
   endsAt    DateTime?
-  owner     User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  subject   Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
-  createdAt DateTime @default(now())
+  owner     User?     @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  subject   Subject?  @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  createdAt DateTime  @default(now())
 
   @@index([ownerId])
   @@index([subjectId, startsAt, endsAt])
@@ -115,13 +115,13 @@ model Enrollment {
 }
 
 model Admission {
-  id            String          @id @default(uuid())
+  id            String             @id @default(uuid())
   studentId     String
   sectionId     String
-  status        AdmissionStatus @default(DRAFT)
-  paymentStatus PaymentStatus   @default(UNPAID)
-  student       User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  section       CourseSection   @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  status        AdmissionStatus    @default(DRAFT)
+  paymentStatus PaymentStatus      @default(UNPAID)
+  student       User               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  section       CourseSection      @relation(fields: [sectionId], references: [id], onDelete: Restrict)
   subjects      AdmissionSubject[]
 
   @@map("admissions")
@@ -130,7 +130,7 @@ model Admission {
 model AdmissionSubject {
   admissionId String
   subjectId   String
-  joinCode    String  @unique
+  joinCode    String    @unique
   schedule    String
   admission   Admission @relation(fields: [admissionId], references: [id], onDelete: Cascade)
   subject     Subject   @relation(fields: [subjectId], references: [id], onDelete: Restrict)
@@ -147,11 +147,14 @@ model ClassroomPost {
   dueAt     DateTime?
   teacherId String
   subjectId String
-  teacher   User              @relation("ClassroomPostTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
-  subject   Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  teacher User    @relation("ClassroomPostTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
   attachments ClassroomPostAttachment[]
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([subjectId, createdAt])
   @@index([teacherId, createdAt])
@@ -159,33 +162,35 @@ model ClassroomPost {
 }
 
 model ClassroomPostAttachment {
-  id           String       @id @default(uuid())
+  id           String @id @default(uuid())
   postId       String
   originalName String
-  storedName   String       @unique
+  storedName   String @unique
   mimeType     String
   size         Int
-  post         ClassroomPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-  createdAt    DateTime     @default(now())
+
+  post ClassroomPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 
   @@index([postId])
   @@map("classroom_post_attachments")
 }
 
 model Quiz {
-  id          String         @id @default(uuid())
-  shareCode   String         @unique
+  id          String           @id @default(uuid())
+  shareCode   String           @unique
   title       String
-  description String         @default("")
+  description String           @default("")
   dueAt       DateTime?
   teacherId   String
   subjectId   String
-  teacher     User           @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  subject     Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher     User             @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject     Subject          @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   questions   QuizQuestion[]
   submissions QuizSubmission[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([teacherId, createdAt])
   @@index([subjectId, createdAt])
@@ -193,29 +198,29 @@ model Quiz {
 }
 
 model QuizQuestion {
-  id            String   @id @default(uuid())
+  id            String @id @default(uuid())
   quizId        String
   prompt        String
   options       Json
   correctOption Int
   position      Int
-  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  quiz          Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@unique([quizId, position])
   @@map("quiz_questions")
 }
 
 model QuizSubmission {
-  id              String   @id @default(uuid())
-  quizId          String
-  studentName     String   @default("")
-  answers         Json
-  score           Int
-  maxScore        Int
-  correctCount    Int
-  totalQuestions  Int
-  createdAt       DateTime @default(now())
-  quiz            Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  id             String   @id @default(uuid())
+  quizId         String
+  studentName    String   @default("")
+  answers        Json
+  score          Int
+  maxScore       Int
+  correctCount   Int
+  totalQuestions Int
+  createdAt      DateTime @default(now())
+  quiz           Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@index([quizId, createdAt])
   @@map("quiz_submissions")
