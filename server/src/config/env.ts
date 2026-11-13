@@ -16,6 +16,7 @@ export const env = {
   databaseUrl: required("DATABASE_URL"),
   jwtSecret: required("JWT_SECRET"),
   port: Number(process.env.PORT ?? 5001),
+  mobileApiUrl: process.env.MOBILE_API_URL ?? "http://localhost:3000",
 };
 
 if (!Number.isInteger(env.port) || env.port < 1 || env.port > 65535) {

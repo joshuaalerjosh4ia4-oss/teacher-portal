@@ -44,6 +44,7 @@ model User {
   enrollments         Enrollment[]
   admissions          Admission[]
   classroomPosts      ClassroomPost[] @relation("ClassroomPostTeacher")
+  quizzes             Quiz[]
 
   @@map("users")
 }
@@ -79,6 +80,7 @@ model Subject {
   rooms          Room[]
   admissions     AdmissionSubject[]
   classroomPosts ClassroomPost[]
+  quizzes        Quiz[]
   createdAt      DateTime @default(now())
 
   @@unique([sectionId, code])
@@ -168,4 +170,53 @@ model ClassroomPostAttachment {
 
   @@index([postId])
   @@map("classroom_post_attachments")
+}
+
+model Quiz {
+  id          String         @id @default(uuid())
+  shareCode   String         @unique
+  title       String
+  description String         @default("")
+  dueAt       DateTime?
+  teacherId   String
+  subjectId   String
+  teacher     User           @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  subject     Subject        @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  questions   QuizQuestion[]
+  submissions QuizSubmission[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([teacherId, createdAt])
+  @@index([subjectId, createdAt])
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id            String   @id @default(uuid())
+  quizId        String
+  prompt        String
+  options       Json
+  correctOption Int
+  position      Int
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([quizId, position])
+  @@map("quiz_questions")
+}
+
+model QuizSubmission {
+  id              String   @id @default(uuid())
+  quizId          String
+  studentName     String   @default("")
+  answers         Json
+  score           Int
+  maxScore        Int
+  correctCount    Int
+  totalQuestions  Int
+  createdAt       DateTime @default(now())
+  quiz            Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId, createdAt])
+  @@map("quiz_submissions")
 }

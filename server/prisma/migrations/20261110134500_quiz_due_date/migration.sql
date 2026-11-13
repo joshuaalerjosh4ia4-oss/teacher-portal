@@ -1,0 +1,2 @@
+ALTER TABLE "quizzes"
+ADD COLUMN "dueAt" TIMESTAMP(3);

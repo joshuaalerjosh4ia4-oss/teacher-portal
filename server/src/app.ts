@@ -11,7 +11,7 @@ const distDirectory = path.join(projectRoot, "dist");
 const app = express();
 app.disable("x-powered-by");
 app.use(helmet());
-app.use(express.json({ limit: "32kb" }));
+app.use(express.json({ limit: "128kb" }));
 app.use(routes);
 
 if (existsSync(path.join(distDirectory, "index.html"))) {

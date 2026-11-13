@@ -17,8 +17,12 @@ workflows.
 - **Overview and sections:** Shows assigned sections, their subjects, and
   schedules.
 - **Classroom:** Publishes announcements and assignments to subjects in a
-  teacher's assigned sections. Assignments may include a due date. Posts may
-  include up to five attachments.
+  teacher's assigned sections. Assignments may include a due date and up to
+  five attachments, and are created from the dedicated Assignments page.
+- **Quizzes:** Lets teachers create and edit multiple-choice quizzes for each
+  assigned subject, set correct answers, share a unique public link, and review
+  automatically graded results. A quiz supports up to 50 questions and six
+  choices per question.
 - **Meeting rooms:** Creates a room for the next scheduled meeting of an
   assigned subject. Teachers can copy its meeting ID and passcode or delete a
   room they own.
@@ -30,6 +34,9 @@ workflows.
 - React 19, TypeScript, and Vite
 - Express 4 and Node.js
 - Prisma ORM and PostgreSQL
+
+The frontend application and its static assets are in `frontend/`; frontend
+source files are in `frontend/src/`. The API remains in `server/`.
 
 ## Requirements
 
@@ -48,6 +55,12 @@ The API reads its database connection configuration from `server/.env` or a
 repository-root `.env` file. If both files contain the same variable,
 `server/.env` takes precedence. Configure the required database connection
 locally, and keep environment files out of version control.
+
+Set `MOBILE_API_URL` to the base URL of the MyClaSSes mobile API when it is not
+available at `http://localhost:3000`. After a teacher publishes an announcement,
+assignment, or quiz, the portal uses the teacher's authenticated session to
+send a realtime notification request to that API. The mobile API and teacher
+portal must use the same user database and JWT secret.
 
 ## Local development
 
@@ -111,6 +124,28 @@ The build type-checks and compiles the API, then creates the frontend in
 server behind HTTPS in production and ensure the attachment directory is
 writable and persistent.
 
+### Deploying a free demo on Render
+
+The root `render.yaml` configures one Render web service that builds the
+frontend and API and serves them together. To deploy:
+
+1. Push this repository to GitHub.
+2. In Render, choose **New → Blueprint**, connect the repository, and deploy
+   the Blueprint.
+3. In the service's **Environment** settings, set `DATABASE_URL` to the
+   production PostgreSQL connection string and `JWT_SECRET` to the secret used
+   by the MyClaSSes teacher authentication system. Do not commit either value
+   to the repository. If mobile notifications should be sent, also set
+   `MOBILE_API_URL` and use the same JWT secret as the mobile API.
+4. Confirm the deployment is healthy at the `onrender.com` URL Render provides.
+
+The service runs `npm run prisma:deploy` at startup to apply pending portal
+migrations. Confirm the database URL points to the intended production
+database before deploying; migrations add portal tables and do not reset the
+database. Render's free service has ephemeral storage, so classroom attachment
+files may be lost after a restart or redeploy. Use a paid service with
+persistent/shared file storage before relying on attachment uploads.
+
 ### Sign-in and access
 
 Sign in with the email and password for a verified teacher account. The API
@@ -129,11 +164,30 @@ the existing MyClaSSes administration workflows.
 
 ### Classroom posts
 
-Select an assigned subject to publish an announcement or assignment. Titles
+Select an assigned subject to publish an announcement or assignment. Students
+enrolled in the subject receive a realtime mobile notification when connected
+to the mobile app. Titles
 are limited to 120 characters and post content to 5,000 characters.
 Assignments can include a due date. Up to five files can be attached to a
 post, with a maximum size of 10 MB per file. Supported formats are JPEG, PNG,
 WebP, PDF, plain text, DOCX, and PPTX.
+
+### Quizzes
+
+Open **Quizzes** to create quizzes for assigned subjects. Add questions and
+answer choices, select the correct answer for each question, optionally set a
+due date, and copy the quiz's unique link to share with students. Students can
+take a quiz without signing in; their score is calculated on the server and
+saved for the teacher to review. Student names are optional. A quiz stops
+accepting submissions when its due date passes. Public quiz submissions are
+limited to 500 per IP address per hour.
+
+Use **Generate 10 per subject** to fill supported assigned subjects to 10
+quizzes each. Existing quizzes are preserved, and subjects without a curated
+question bank are reported and skipped. The bank contains curriculum-based
+multiple-choice quizzes for supported subject codes; generation runs only when
+a teacher requests it. Apply the quiz migration with `npm run prisma:deploy`
+before using the feature.
 
 ### Meeting rooms
 
@@ -159,6 +213,13 @@ All API responses use JSON except successful attachment downloads.
 | `GET` | `/api/classroom/posts` | Teacher | List classroom posts created by the teacher. |
 | `POST` | `/api/classroom/posts` | Teacher | Create an announcement or assignment; multipart form data supports `attachments`. |
 | `GET` | `/api/classroom/attachments/:attachmentId` | Teacher | Download an attachment belonging to the teacher's post. |
+| `GET` | `/api/quizzes` | Teacher | List quizzes and results for the teacher. |
+| `POST` | `/api/quizzes` | Teacher | Create a multiple-choice quiz and its answer key; optional `dueAt` closes submissions at the deadline. |
+| `POST` | `/api/quizzes/generate` | Teacher | Fill supported assigned subjects up to 10 quizzes each; preserves existing quizzes and reports unsupported subjects. |
+| `PUT` | `/api/quizzes/:quizId` | Teacher | Edit a quiz, answer key, or due date. |
+| `DELETE` | `/api/quizzes/:quizId` | Teacher | Delete a quiz and its submissions. |
+| `GET` | `/api/public/quizzes/:shareCode` | Public | Get quiz questions without exposing the answer key. |
+| `POST` | `/api/public/quizzes/:shareCode/submissions` | Public | Submit answers and receive an automatically calculated grade. |
 
 Successful JSON endpoints return a `{ "success": true, "data": ... }` envelope.
 Errors return `{ "success": false, "message": "..." }`. Login accepts a JSON
@@ -177,7 +238,8 @@ fields:
 
 Login is rate-limited to 10 attempts per 15-minute window. API request bodies
 are validated, and protected actions are scoped to subjects and rooms owned by
-or assigned to the authenticated teacher.
+or assigned to the authenticated teacher. Public quiz submissions are limited
+to 500 attempts per hour per IP address.
 
 ## Commands
 

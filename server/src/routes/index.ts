@@ -10,11 +10,19 @@ import { loginTeacher, getTeacher, changeTeacherPassword } from "../services/aut
 import { listTeachingSections } from "../services/teacherService";
 import { createScheduledRoom, deleteScheduledRoom, listScheduledRooms } from "../services/roomService";
 import { createClassroomPost, getClassroomAttachment, listClassroomPosts } from "../services/classroomService";
+import { createQuiz, deleteQuiz, generateSubjectQuizzes, getPublicQuiz, listTeacherQuizzes, submitQuiz, updateQuiz } from "../services/quizService";
+import { notifyMobileStudents } from "../services/mobileNotificationService";
 
 const router = Router();
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
+const quizSubmissionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 500,
   standardHeaders: "draft-8",
   legacyHeaders: false,
 });
@@ -94,6 +102,105 @@ authRouter.post(
 );
 router.use("/api/auth", authRouter);
 
+const quizQuestionSchema = z.object({
+  prompt: z.string().trim().min(1).max(500),
+  options: z.array(z.string().trim().min(1).max(250)).min(2).max(6),
+  correctOption: z.number().int().min(0).max(5),
+});
+const quizSchema = z.object({
+  subjectId: z.string().uuid(),
+  title: z.string().trim().min(1).max(120),
+  description: z.string().trim().max(2000).default(""),
+  dueAt: z.string().datetime(),
+  questions: z.array(quizQuestionSchema).min(1).max(50),
+});
+
+router.get(
+  "/api/quizzes",
+  authMiddleware,
+  asyncRoute(async (req, res) => {
+    res.json({ success: true, data: await listTeacherQuizzes(req.user!.userId) });
+  }),
+);
+router.post(
+  "/api/quizzes/generate",
+  authMiddleware,
+  validateBody(z.object({
+    dueAt: z.string().datetime(),
+  })),
+  asyncRoute(async (req, res) => {
+    const result = await generateSubjectQuizzes(req.user!.userId, req.body.dueAt);
+    const subjectIds = [...new Set(result.createdQuizzes.map(({ subjectId }) => subjectId))];
+    await Promise.all(subjectIds.map((subjectId) => notifyMobileStudents(req.get("authorization"), {
+      subjectId,
+      type: "QUIZ",
+      title: "New quizzes added",
+    })));
+    res.status(201).json({
+      success: true,
+      data: result,
+    });
+  }),
+);
+router.post(
+  "/api/quizzes",
+  authMiddleware,
+  validateBody(quizSchema),
+  asyncRoute(async (req, res) => {
+    const quiz = await createQuiz(req.user!.userId, req.body);
+    await notifyMobileStudents(req.get("authorization"), {
+      subjectId: req.body.subjectId,
+      type: "QUIZ",
+      title: quiz.title,
+    });
+    res.status(201).json({
+      success: true,
+      data: quiz,
+    });
+  }),
+);
+router.put(
+  "/api/quizzes/:quizId",
+  authMiddleware,
+  validateBody(quizSchema),
+  asyncRoute(async (req, res) => {
+    res.json({
+      success: true,
+      data: await updateQuiz(req.user!.userId, req.params.quizId, req.body),
+    });
+  }),
+);
+router.delete(
+  "/api/quizzes/:quizId",
+  authMiddleware,
+  asyncRoute(async (req, res) => {
+    res.json({
+      success: true,
+      data: await deleteQuiz(req.user!.userId, req.params.quizId),
+    });
+  }),
+);
+router.get(
+  "/api/public/quizzes/:shareCode",
+  asyncRoute(async (req, res) => {
+    res.json({ success: true, data: await getPublicQuiz(req.params.shareCode) });
+  }),
+);
+router.post(
+  "/api/public/quizzes/:shareCode/submissions",
+  quizSubmissionLimiter,
+  validateBody(z.object({
+    studentName: z.string().trim().max(100).default(""),
+    answers: z.array(z.number().int().min(0).max(5)).min(1).max(50),
+  })),
+  asyncRoute(async (req, res) => {
+    res.status(201).json({
+      success: true,
+      data: await submitQuiz(req.params.shareCode, req.body.studentName, req.body.answers),
+    });
+  }),
+);
+
 router.get(
   "/api/admissions/sections",
   authMiddleware,
@@ -140,22 +247,38 @@ router.get(
     res.json({ success: true, data: await listClassroomPosts(req.user!.userId) });
   }),
 );
+const classroomPostSchema = z.object({
+  subjectId: z.string().uuid(),
+  type: z.enum(["ANNOUNCEMENT", "ASSIGNMENT"]),
+  title: z.string().trim().min(1).max(120),
+  content: z.string().trim().min(1).max(5000),
+  dueAt: z.string().datetime().optional(),
+}).superRefine((post, context) => {
+  if (post.type === "ASSIGNMENT" && !post.dueAt) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["dueAt"],
+      message: "A due date and time is required for activities and exams.",
+    });
+  }
+});
+
 router.post(
   "/api/classroom/posts",
   authMiddleware,
   handleClassroomAttachmentUpload,
-  validateBody(z.object({
-    subjectId: z.string().uuid(),
-    type: z.enum(["ANNOUNCEMENT", "ASSIGNMENT"]),
-    title: z.string().trim().min(1).max(120),
-    content: z.string().trim().min(1).max(5000),
-    dueAt: z.string().datetime().optional(),
-  })),
+  validateBody(classroomPostSchema),
   asyncRoute(async (req, res) => {
     const files = Array.isArray(req.files) ? req.files : [];
+    const post = await createClassroomPost(req.user!.userId, { ...req.body, files });
+    await notifyMobileStudents(req.get("authorization"), {
+      subjectId: req.body.subjectId,
+      type: req.body.type,
+      title: post.title,
+    });
     res.status(201).json({
       success: true,
-      data: await createClassroomPost(req.user!.userId, { ...req.body, files }),
+      data: post,
     });
   }),
 );
