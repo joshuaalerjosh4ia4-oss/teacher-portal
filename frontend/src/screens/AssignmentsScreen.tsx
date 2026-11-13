@@ -1,3 +1,4 @@
+import type { FormEvent, ReactNode } from "react";
 import { ErrorBanner } from "../components/Brand";
 import { PostComposer } from "./ClassroomScreen";
 import type { ClassroomPost, ClassroomPostType, CourseSection } from "../types";
@@ -9,9 +10,9 @@ interface AssignmentsScreenProps {
   isSubmitting: boolean;
   error: string;
   onToggleComposer: () => void;
-  onCreatePost: (event: React.FormEvent<HTMLFormElement>, type: ClassroomPostType) => void;
-  onCreateAssignment: (event: React.FormEvent<HTMLFormElement>) => void;
-  renderClassroomPost: (post: ClassroomPost) => React.ReactNode;
+  onCreatePost: (event: FormEvent<HTMLFormElement>, type: ClassroomPostType) => void;
+  onCreateAssignment: (event: FormEvent<HTMLFormElement>) => void;
+  renderClassroomPost: (post: ClassroomPost) => ReactNode;
 }
 
 export function AssignmentsScreen({

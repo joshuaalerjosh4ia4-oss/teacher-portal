@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { CourseSection } from "../types";
 import { formatSubjectTime } from "../utils/date";
 
@@ -5,7 +6,7 @@ interface SectionsPanelProps {
   sections: CourseSection[];
   error: string;
   onCreatePost: () => void;
-  renderSectionCard: (section: CourseSection) => React.ReactNode;
+  renderSectionCard: (section: CourseSection) => ReactNode;
 }
 
 export function SectionsScreen({ sections, error, onCreatePost, renderSectionCard }: SectionsPanelProps) {

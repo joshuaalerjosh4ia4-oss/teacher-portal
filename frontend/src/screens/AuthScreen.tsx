@@ -1,11 +1,12 @@
+import type { FormEvent } from "react";
 import { ErrorBanner, Logo } from "../components/Brand";
 
 interface AuthPanelProps {
   userMustChangePassword: boolean;
   error: string;
   isSubmitting: boolean;
-  onLogin: (event: React.FormEvent<HTMLFormElement>) => void;
-  onPasswordChange: (event: React.FormEvent<HTMLFormElement>) => void;
+  onLogin: (event: FormEvent<HTMLFormElement>) => void;
+  onPasswordChange: (event: FormEvent<HTMLFormElement>) => void;
   onSignOut: () => void;
 }
 

@@ -1,3 +1,4 @@
+import type { FormEvent, ReactNode } from "react";
 import { ErrorBanner } from "../components/Brand";
 import { formatDate } from "../utils/date";
 import type { ClassroomPost, ClassroomPostType, ClassroomView, CourseSection, QuizItem } from "../types";
@@ -12,11 +13,11 @@ interface ClassroomPanelProps {
   error: string;
   onToggleStreamComposer: () => void;
   onSetClassroomView: (view: ClassroomView) => void;
-  onCreateAssignment: (event: React.FormEvent<HTMLFormElement>) => void;
-  onCreatePost: (event: React.FormEvent<HTMLFormElement>, type: ClassroomPostType) => void;
+  onCreateAssignment: (event: FormEvent<HTMLFormElement>) => void;
+  onCreatePost: (event: FormEvent<HTMLFormElement>, type: ClassroomPostType) => void;
   onCopyQuizLink: (quiz: QuizItem) => void;
-  renderClassroomPost: (post: ClassroomPost) => React.ReactNode;
-  pageHeading: (eyebrow: string, title: string, subtitle: string) => React.ReactNode;
+  renderClassroomPost: (post: ClassroomPost) => ReactNode;
+  pageHeading: (eyebrow: string, title: string, subtitle: string) => ReactNode;
 }
 
 export function ClassroomScreen({
@@ -143,8 +144,8 @@ export interface PostComposerProps {
   type: ClassroomPostType;
   subjects: Array<{ id: string; code: string; title: string; course: string; sectionCode: string }>;
   isSubmitting: boolean;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>, type: ClassroomPostType) => void;
-  onAssignmentSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>, type: ClassroomPostType) => void;
+  onAssignmentSubmit?: (event: FormEvent<HTMLFormElement>) => void;
   onCancel?: () => void;
 }
 
@@ -156,7 +157,7 @@ export function PostComposer({
   onAssignmentSubmit,
   onCancel,
 }: PostComposerProps) {
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     if (type === "ASSIGNMENT") {
       if (onAssignmentSubmit) {
         onAssignmentSubmit(event);

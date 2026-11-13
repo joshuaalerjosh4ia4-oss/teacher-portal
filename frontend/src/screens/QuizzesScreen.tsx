@@ -1,3 +1,4 @@
+import type { FormEvent, ReactNode } from "react";
 import { ErrorBanner } from "../components/Brand";
 import { formatDate } from "../utils/date";
 import type { CourseSection, QuizDraftQuestion, QuizItem } from "../types";
@@ -18,7 +19,7 @@ interface QuizzesPanelProps {
   quizQuestions: QuizDraftQuestion[];
   onGenerateQuizzes: () => void;
   onCloseComposer: () => void;
-  onSaveQuiz: (event: React.FormEvent<HTMLFormElement>) => void;
+  onSaveQuiz: (event: FormEvent<HTMLFormElement>) => void;
   onCopyQuizLink: (quiz: QuizItem) => void;
   onEditQuiz: (quiz: QuizItem) => void;
   onDeleteQuiz: (quiz: QuizItem) => void;
@@ -33,7 +34,7 @@ interface QuizzesPanelProps {
   duplicateQuizQuestion: (questionIndex: number) => void;
   removeQuizQuestion: (questionIndex: number) => void;
   updateQuizQuestion: (questionIndex: number, field: "prompt" | "options" | "correctOption", value: string | number, optionIndex?: number) => void;
-  pageHeading: (eyebrow: string, title: string, subtitle: string) => React.ReactNode;
+  pageHeading: (eyebrow: string, title: string, subtitle: string) => ReactNode;
 }
 
 export function QuizzesScreen({

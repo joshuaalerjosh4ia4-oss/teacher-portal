@@ -1,3 +1,4 @@
+import type { FormEvent, ReactNode } from "react";
 import { ErrorBanner } from "../components/Brand";
 import { formatSubjectTime } from "../utils/date";
 import type { ScheduledRoom, CourseSection } from "../types";
@@ -8,10 +9,10 @@ interface RoomsPanelProps {
   error: string;
   isSubmitting: boolean;
   deletingRoomId: string | null;
-  onScheduleRoom: (event: React.FormEvent<HTMLFormElement>) => void;
+  onScheduleRoom: (event: FormEvent<HTMLFormElement>) => void;
   onDeleteRoom: (room: ScheduledRoom) => void;
   onCopyRoomDetails: (room: ScheduledRoom) => void;
-  pageHeading: (eyebrow: string, title: string, subtitle: string) => React.ReactNode;
+  pageHeading: (eyebrow: string, title: string, subtitle: string) => ReactNode;
 }
 
 export function RoomsScreen({
