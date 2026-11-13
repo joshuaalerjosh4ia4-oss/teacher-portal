@@ -9,6 +9,7 @@ const projectRoot = path.resolve(__dirname, "../..");
 const distDirectory = path.join(projectRoot, "dist");
 
 const app = express();
+app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(helmet());
 app.use(express.json({ limit: "128kb" }));

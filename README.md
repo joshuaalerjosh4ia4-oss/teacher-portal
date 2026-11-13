@@ -46,8 +46,10 @@ source files are in `frontend/src/`. The API remains in `server/`.
 - A verified teacher account created through the existing MyClaSSes account
   workflow
 
-Install dependencies separately for the frontend and API. The project root and
-`server/` each have their own package manifest and lockfile.
+The root package contains only scripts for coordinating the application.
+Frontend dependencies and configuration live in `frontend/`, and API
+dependencies and configuration live in `server/`; each package has its own
+lockfile.
 
 ## Configuration
 
@@ -64,16 +66,27 @@ portal must use the same user database and JWT secret.
 
 ## Local development
 
-From the repository root, install both dependency sets, generate the Prisma
-client, and apply pending portal migrations:
+From the repository root, install the root, frontend, and API dependencies,
+generate the Prisma client, and apply pending portal migrations:
 
 ```powershell
 Set-Location C:\Users\Joshua\Documents\teacher-portal
 npm ci
+npm ci --prefix frontend
 npm ci --prefix server
 npm run prisma:generate
 npm run prisma:deploy
 ```
+
+To install and build only the frontend package, run:
+
+```powershell
+npm ci --prefix frontend
+npm run build --prefix frontend
+```
+
+The combined app deployment still uses the repository-root build and start
+commands; its Express server serves the frontend alongside the API.
 
 Start the API and frontend together:
 
@@ -112,6 +125,7 @@ Build and start the application from the repository root:
 ```powershell
 Set-Location C:\Users\Joshua\Documents\teacher-portal
 npm ci
+npm ci --prefix frontend
 npm ci --prefix server
 npm run prisma:generate
 npm run prisma:deploy
@@ -145,6 +159,13 @@ database before deploying; migrations add portal tables and do not reset the
 database. Render's free service has ephemeral storage, so classroom attachment
 files may be lost after a restart or redeploy. Use a paid service with
 persistent/shared file storage before relying on attachment uploads.
+
+If configuring the service manually instead of using the Blueprint, leave
+**Root Directory** blank. Use
+`npm ci --include=dev && npm ci --prefix frontend --include=dev && npm ci --prefix server --include=dev && npm run build`
+as the build command, `npm run start:render` as the start command, and
+`/health` as the health check path. The development dependencies are required
+during build because TypeScript, Vite, and Prisma are build tools.
 
 ### Sign-in and access
 
@@ -254,9 +275,10 @@ Run these commands from the repository root:
 | `npm run prisma:generate` | Generate the Prisma Client from the server schema. |
 | `npm run prisma:deploy` | Apply pending Prisma migrations to the configured database. |
 
-For API-only development, run `npm --prefix server run dev`. Frontend
-dependencies are installed in the root `node_modules`; API dependencies are
-installed in `server/node_modules`.
+For API-only development, run `npm --prefix server run dev`. To work on the
+frontend by itself, run `npm run dev --prefix frontend`. Frontend dependencies
+are installed in `frontend/node_modules`; API dependencies are installed in
+`server/node_modules`.
 
 ## Troubleshooting
 
