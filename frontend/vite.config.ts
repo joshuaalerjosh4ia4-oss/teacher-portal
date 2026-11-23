@@ -15,6 +15,7 @@ export default defineConfig({
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
+    allowedHosts: ["teacher-portal-frontend-b98n.onrender.com"],
     proxy: {
       "/api": "http://localhost:5001",
       "/health": "http://localhost:5001",
