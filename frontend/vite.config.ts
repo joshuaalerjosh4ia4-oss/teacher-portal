@@ -9,13 +9,19 @@ export default defineConfig({
   plugins: [react()],
   preview: {
     host: "0.0.0.0",
-    allowedHosts: ["teacher-portal-frontend-b98n.onrender.com"],
+    allowedHosts: [
+      "teacher-portal-frontend-b98n.onrender.com",
+      "teacher-portal-1it2.onrender.com",
+    ],
   },
   server: {
     host: "0.0.0.0",
     port: 5173,
     strictPort: true,
-    allowedHosts: ["teacher-portal-frontend-b98n.onrender.com"],
+    allowedHosts: [
+      "teacher-portal-frontend-b98n.onrender.com",
+      "teacher-portal-1it2.onrender.com",
+    ],
     proxy: {
       "/api": "http://localhost:5001",
       "/health": "http://localhost:5001",
