@@ -12,6 +12,26 @@ const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use(helmet());
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (origin && allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  }
+
+  if (req.method === "OPTIONS") {
+    res.sendStatus(origin && allowedOrigins.includes(origin) ? 204 : 403);
+    return;
+  }
+
+  next();
+});
 app.use(express.json({ limit: "128kb" }));
 app.use(routes);
 

@@ -7,6 +7,10 @@ export default defineConfig({
     emptyOutDir: true,
   },
   plugins: [react()],
+  preview: {
+    host: "0.0.0.0",
+    allowedHosts: ["teacher-portal-frontend-b98n.onrender.com"],
+  },
   server: {
     host: "0.0.0.0",
     port: 5173,
