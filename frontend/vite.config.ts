@@ -10,8 +10,8 @@ export default defineConfig({
   preview: {
     host: "0.0.0.0",
     allowedHosts: [
-      "teacher-portal-frontend-b98n.onrender.com",
-      "teacher-portal-1it2.onrender.com",
+      "https://teacher-portal-c7j5.onrender.com",
+      "teacher-webpage.onrender.com",
     ],
   },
   server: {
@@ -19,8 +19,8 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     allowedHosts: [
-      "teacher-portal-frontend-b98n.onrender.com",
-      "teacher-portal-1it2.onrender.com",
+      "https://teacher-portal-c7j5.onrender.com",
+      "https://teacher-webpage.onrender.com",
     ],
     proxy: {
       "/api": "http://localhost:5001",
